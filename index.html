@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>地產 S 牌溫習助手</title>
+    <!-- PWA iOS Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="S牌溫習">
+    <link rel="apple-touch-icon" href="https://via.placeholder.com/180/2563eb/ffffff?text=S">
+    
+    <!-- Tailwind CSS for rapid styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    <style>
+        /* Custom smooth transitions and mobile adjustments */
+        body { -webkit-tap-highlight-color: transparent; }
+        /* Landscape sidebar adaptation */
+        @media (min-width: 768px) and (orientation: landscape) {
+            .app-container {
+                display: flex;
+                height: 100vh;
+                overflow: hidden;
+            }
+            .sidebar-nav {
+                width: 280px;
+                flex-shrink: 0;
+                flex-direction: column !important;
+                height: 100vh;
+                border-right: 1px solid #e5e7eb;
+                border-top: none !important;
+                padding-top: 2rem;
+            }
+            .main-content {
+                flex-grow: 1;
+                overflow-y: auto;
+                height: 100vh;
+                padding-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    <div class="app-container max-w-5xl mx-auto bg-white min-h-screen shadow-sm">
+        
+        <!-- Navigation / Sidebar -->
+        <nav class="sidebar-nav fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 flex justify-around p-2 z-50 md:relative md:border-t-0 md:bg-gray-50">
+            <div class="hidden md:block px-6 mb-6">
+                <h1 class="text-xl font-bold text-blue-600">🏠 地產 S 牌助手</h1>
+                <p class="text-xs text-gray-500 mt-1">營業員牌照溫習系統</p>
+            </div>
+            <button onclick="switchTab('home')" id="nav-home" class="nav-btn flex flex-col items-center py-2 px-3 text-blue-600 font-medium text-xs md:w-full md:flex-row md:px-6 md:py-3 md:rounded-lg md:mb-1 md:hover:bg-blue-50 transition">
+                <span class="text-lg md:mr-3">🏠</span> 主頁倒數
+            </button>
+            <button onclick="switchTab('special')" id="nav-special" class="nav-btn flex flex-col items-center py-2 px-3 text-gray-500 font-medium text-xs md:w-full md:flex-row md:px-6 md:py-3 md:rounded-lg md:mb-1 md:hover:bg-gray-100 transition">
+                <span class="text-lg md:mr-3">📚</span> 專項特訓
+            </button>
+            <button onclick="switchTab('data')" id="nav-data" class="nav-btn flex flex-col items-center py-2 px-3 text-gray-500 font-medium text-xs md:w-full md:flex-row md:px-6 md:py-3 md:rounded-lg md:mb-1 md:hover:bg-gray-100 transition">
+                <span class="text-lg md:mr-3">📂</span> 我的資料
+            </button>
+            <button onclick="switchTab('links')" id="nav-links" class="nav-btn flex flex-col items-center py-2 px-3 text-gray-500 font-medium text-xs md:w-full md:flex-row md:px-6 md:py-3 md:rounded-lg md:mb-1 md:hover:bg-gray-100 transition">
+                <span class="text-lg md:mr-3">🔗</span> 官方入口
+            </button>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content pb-24 md:pb-6 p-4 md:p-8">
+            
+            <!-- TAB 1: HOME -->
+            <section id="tab-home" class="tab-content space-y-6">
+                <div class="bg-gradient-to-r from-blue-600 to-indigo-700 text-white p-6 rounded-2xl shadow-md">
+                    <h2 class="text-lg font-semibold opacity-90">距離考試還有</h2>
+                    <div id="countdown-timer" class="text-4xl font-black mt-2 tracking-tight">計算中...</div>
+                    <div class="mt-4 flex items-center justify-between bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm">
+                        <span class="text-sm">設定考試日期：</span>
+                        <input type="date" id="exam-date-input" class="bg-white/20 text-white rounded px-2 py-1 text-sm focus:outline-none" onchange="updateExamDate(this.value)">
+                    </div>
+                </div>
+
+                <div class="bg-white border border-gray-100 p-5 rounded-2xl shadow-sm">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center justify-between">
+                        <span>📋 溫習進度 Checklist</span>
+                        <span id="checklist-progress" class="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">0%</span>
+                    </h3>
+                    <div id="checklist-container" class="space-y-2">
+                        <!-- Dynamically populated checklist -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: SPECIALIZED MODULES -->
+            <section id="tab-special" class="tab-content hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">專項特訓</h2>
+                <div class="grid gap-4 md:grid-cols-2">
+                    <div class="border border-gray-200 p-5 rounded-2xl hover:border-blue-300 transition cursor-pointer" onclick="openModule('casestudy')">
+                        <span class="text-2xl">⚖️</span>
+                        <h3 class="font-bold text-lg mt-2">1. Case Study 實戰個案</h3>
+                        <p class="text-sm text-gray-500 mt-1">地產代理實務情境題、法律責任與潛在違規分析。</p>
+                    </div>
+                    <div class="border border-gray-200 p-5 rounded-2xl hover:border-blue-300 transition cursor-pointer" onclick="openModule('forms')">
+                        <span class="text-2xl">📝</span>
+                        <h3 class="font-bold text-lg mt-2">2. 虛構查冊與表格 1–6 點用</h3>
+                        <p class="text-sm text-gray-500 mt-1">土地查冊要點、放盤紙、地產代理協議（獨家/非獨家）填寫規範。</p>
+                    </div>
+                    <div class="border border-gray-200 p-5 rounded-2xl hover:border-blue-300 transition cursor-pointer" onclick="openModule('law')">
+                        <span class="text-2xl">📜</span>
+                        <h3 class="font-bold text-lg mt-2">3. 規管、轉易與租務法例</h3>
+                        <p class="text-sm text-gray-500 mt-1">條例重點、物業轉易程序及租契注意事項。</p>
+                    </div>
+                </div>
+                <div id="module-viewer" class="bg-gray-50 border border-dashed border-gray-300 p-6 rounded-2xl hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 id="module-title" class="font-bold text-lg">單元內容</h3>
+                        <button onclick="closeModule()" class="text-sm text-gray-500 hover:text-red-600">關閉 ✕</button>
+                    </div>
+                    <div id="module-body" class="text-sm text-gray-700 space-y-3 leading-relaxed"></div>
+                </div>
+            </section>
+
+            <!-- TAB 3: MY DATA & PDF -->
+            <section id="tab-data" class="tab-content hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">我的資料與 PDF 學習指引</h2>
+                <div class="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm space-y-4">
+                    <label class="block font-medium text-sm text-gray-700">上傳學習指引 PDF / 筆記</label>
+                    <input type="file" id="pdf-upload" accept="application/pdf" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer" onchange="handlePDFUpload(event)">
+                    
+                    <div class="flex gap-2 mt-2">
+                        <input type="text" id="pdf-search-query" placeholder="輸入關鍵字搜尋（例如：獨家代理、表格3）..." class="flex-grow border border-gray-300 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-blue-500">
+                        <button onclick="searchPDFText()" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-blue-700 transition">搜尋</button>
+                    </div>
+                </div>
+                <div id="pdf-results" class="space-y-3"></div>
+            </section>
+
+            <!-- TAB 4: OFFICIAL PORTALS -->
+            <section id="tab-links" class="tab-content hidden space-y-6">
+                <h2 class="text-2xl font-bold text-gray-800">官方入口與學習指引目錄</h2>
+                <div class="grid gap-3">
+                    <a href="https://www.eaa.org.hk" target="_blank" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 transition">
+                        <div>
+                            <h4 class="font-bold text-gray-800">地產代理監管局 (EAA) 官方網站</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">查看考試手冊、最新通告與執業指引</p>
+                        </div>
+                        <span class="text-gray-400">↗</span>
+                    </a>
+                    <a href="https://www.eaa.org.hk/tc/information-centre/publications/study-guide" target="_blank" class="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-2xl hover:border-blue-300 transition">
+                        <div>
+                            <h4 class="font-bold text-gray-800">地產代理法律與實務學習指引目錄</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">第一章至第七章、附錄及實務規例</p>
+                        </div>
+                        <span class="text-gray-400">↗</span>
+                    </a>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Script Logic -->
+    <script>
+        // Tab Switching Logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-blue-600', 'md:bg-blue-50');
+                el.classList.add('text-gray-500');
+            });
+            
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            activeBtn.classList.remove('text-gray-500');
+            activeBtn.classList.add('text-blue-600', 'md:bg-blue-50');
+        }
+
+        // Exam Countdown Logic
+        let examDate = localStorage.getItem('s_exam_date') || '2026-10-15';
+        document.getElementById('exam-date-input').value = examDate;
+
+        function updateExamDate(val) {
+            if(!val) return;
+            examDate = val;
+            localStorage.setItem('s_exam_date', val);
+            calculateCountdown();
+        }
+
+        function calculateCountdown() {
+            const now = new Date();
+            const exam = new Date(examDate + 'T09:00:00');
+            const diff = exam - now;
+            const timerEl = document.getElementById('countdown-timer');
+            
+            if (diff <= 0) {
+                timerEl.innerText = "考試日已經到啦！加油！🚀";
+                return;
+            }
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            timerEl.innerText = `${days} 日 ${hours} 小時`;
+        }
+        setInterval(calculateCountdown, 1000);
+        calculateCountdown();
+
+        // Checklist State & Persistence
+        const defaultChecklist = [
+            { id: 1, text: "熟讀《地產代理條例》及附屬法例", done: false },
+            { id: 2, text: "掌握土地查冊要點與常見伏位", done: false },
+            { id: 3, text: "練熟表格 1 至 6 點用及適用對象", done: false },
+            { id: 4, text: "溫習物業轉易程序及業權契據", done: false },
+            { id: 5, text: "熟讀租契及租約事宜法規", done: false },
+            { id: 6, text: "完成最少 3 份網上模擬試題", done: false }
+        ];
+
+        let checklist = JSON.parse(localStorage.getItem('s_checklist')) || defaultChecklist;
+
+        function renderChecklist() {
+            const container = document.getElementById('checklist-container');
+            container.innerHTML = '';
+            let completedCount = 0;
+
+            checklist.forEach(item => {
+                if (item.done) completedCount++;
+                const div = document.createElement('div');
+                div.className = `flex items-center justify-between p-3 rounded-xl border transition ${item.done ? 'bg-green-50/50 border-green-200 text-gray-400 line-through' : 'bg-gray-50 border-gray-100 text-gray-700'}`;
+                div.innerHTML = `
+                    <label class="flex items-center space-x-3 cursor-pointer w-full">
+                        <input type="checkbox" ${item.done ? 'checked' : ''} onchange="toggleCheck(${item.id})" class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                        <span class="text-sm font-medium">${item.text}</span>
+                    </label>
+                `;
+                container.appendChild(div);
+            });
+
+            const pct = Math.round((completedCount / checklist.length) * 100);
+            document.getElementById('checklist-progress').innerText = `${pct}%`;
+        }
+
+        function toggleCheck(id) {
+            checklist = checklist.map(item => item.id === id ? { ...item, done: !item.done } : item);
+            localStorage.setItem('s_checklist', JSON.stringify(checklist));
+            renderChecklist();
+        }
+        renderChecklist();
+
+        // Specialized Modules Content Mock
+        const modulesData = {
+            casestudy: {
+                title: "1. Case Study 實戰個案分析",
+                content: "• <strong>個案情境：</strong>代理未有在落實臨時買賣合約前向買家提供《物業資料表格》（表格1），並同時代表買賣雙方而未有簽署《雙重代理同意書》。<br>• <strong>法律後果：</strong>違反《地產代理常規（一般責任及香港住宅物業）規例》，可能被監管局紀律處分、罰款或暫時吊銷牌照。<br>• <strong>考試貼士：</strong>留意邊個情況必須使用獨家代理協議（如：同一張兼備獨家及非獨家條文必須有顯眼提示）。"
+            },
+            forms: {
+                title: "2. 虛構查冊、表格 1–6 點用",
+                content: "• <strong>表格 1 / 2：</strong>住宅物業買賣/出租資料表格（俗稱EAA表格），必須在落實交易前向客戶展示。<br>• <strong>表格 3 / 4：</strong>出售/購買住宅物業的地產代理協議（業主/買家專用）。<br>• <strong>虛構查冊伏位：</strong>考試常考業權人與身分證明文件不符、註冊摘要中有未解除之押記（Charging Order）或僭建命令（Unauthorized Building Works）。"
+            },
+            law: {
+                title: "3. 規管、轉易與租務法例",
+                content: "• <strong>業權轉易：</strong>臨時合約（臨時買賣合約）具法律約束力，律師樓銜接流程。<br>• <strong>租務條例：</strong>了解《業主與租客（綜合）條例》關於租金壓制、法定通知期及分租之規定。<br>• <strong>洗錢防制：</strong>地產代理進行大額交易時須識別客戶身分（KYC）並備存紀錄。"
+            }
+        };
+
+        function openModule(key) {
+            const mod = modulesData[key];
+            if (!mod) return;
+            document.getElementById('module-title').innerText = mod.title;
+            document.getElementById('module-body').innerHTML = mod.content;
+            document.getElementById('module-viewer').classList.remove('hidden');
+        }
+
+        function closeModule() {
+            document.getElementById('module-viewer').classList.add('hidden');
+        }
+
+        // PDF Handling & Search Concept
+        let extractedPDFText = "";
+
+        async function handlePDFUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const resultsEl = document.getElementById('pdf-results');
+            resultsEl.innerHTML = `<p class="text-sm text-blue-600">正在讀取 PDF 內容，請稍候...</p>`;
+
+            const reader = new FileReader();
+            reader.onload = async function() {
+                const typedarray = new Uint8Array(this.result);
+                try {
+                    const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                    let fullText = "";
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(" ");
+                        fullText += `[第 ${i} 頁] ` + pageText + "\n";
+                    }
+                    extractedPDFText = fullText;
+                    resultsEl.innerHTML = `<p class="text-sm text-green-600 font-medium">✅ PDF 上傳成功！全書共 ${pdf.numPages} 頁，已可開始進行關鍵字搜尋。</p>`;
+                } catch (err) {
+                    resultsEl.innerHTML = `<p class="text-sm text-red-600">❌ 讀取 PDF 失敗，請確定檔案未受密碼保護。</p>`;
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function searchPDFText() {
+            const query = document.getElementById('pdf-search-query').value.trim();
+            const resultsEl = document.getElementById('pdf-results');
+            
+            if (!extractedPDFText) {
+                resultsEl.innerHTML = `<p class="text-sm text-amber-600">⚠️ 請先上傳 PDF 檔案，才可進行檢索。</p>`;
+                return;
+            }
+            if (!query) {
+                resultsEl.innerHTML = `<p class="text-sm text-amber-600">⚠️ 請輸入要搜尋的關鍵字。</p>`;
+                return;
+            }
+
+            const lines = extractedPDFText.split('\n');
+            const matches = lines.filter(line => line.includes(query));
+
+            if (matches.length === 0) {
+                resultsEl.innerHTML = `<p class="text-sm text-gray-500">找不到包含「${query}」的內容。</p>`;
+                return;
+            }
+
+            let html = `<p class="text-xs font-bold text-gray-500 mb-2">找到 ${matches.length} 個相關段落：</p><div class="space-y-2 max-h-60 overflow-y-auto">`;
+            matches.slice(0, 10).forEach(match => {
+                html += `<div class="p-3 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-700">${match}</div>`;
+            });
+            html += `</div>`;
+            resultsEl.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
